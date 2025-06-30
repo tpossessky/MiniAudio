@@ -25,7 +25,7 @@ void data_callback(const ma_device* device, void* output, const void* input, ma_
 
     for (ma_uint32 i = 0; i < frameCount; i++) {
         // Pass normalized phase (0.0 to 1.0) to generateWave
-        Vec2 output; // duty not relevant for sine
+        Vec2 output;
         output = (Vec2){0.0f, 0.0f};
 
         Vec2 sine_wave = vec2_mul(generateWave(WAVE_SINE, data->phase, 0.0f), 1.8f); // 70% volume
@@ -37,11 +37,6 @@ void data_callback(const ma_device* device, void* output, const void* input, ma_
         combined_wave = vec2_mul(combined_wave, mix_gain); // Using your scalar vec2_mul
 
         combined_wave = vec2_softClip(combined_wave);
-
-
-
-
-
 
 
 

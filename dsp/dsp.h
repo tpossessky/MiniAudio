@@ -22,38 +22,38 @@ typedef enum {
 
 
 
-static Vec2 vec2_from_float(float v) {
+Vec2 vec2_from_float(float v) {
     return (Vec2){ v, v };
 }
 
-static Vec2 vec2_add(Vec2 a, Vec2 b) {
+Vec2 vec2_add(Vec2 a, Vec2 b) {
     return (Vec2){ a.x + b.x, a.y + b.y };
 }
 
-static Vec2 vec2_mul(Vec2 a, float scalar) {
+Vec2 vec2_mul(Vec2 a, float scalar) {
     return (Vec2){ a.x * scalar, a.y * scalar };
 }
 
-static Vec2 vec2_tanh(Vec2 a) {
+Vec2 vec2_tanh(Vec2 a) {
     return (Vec2){ tanhf(a.x), tanhf(a.y) };
 }
 
-static Vec2 vec2_softClip(Vec2 x) {
+Vec2 vec2_softClip(Vec2 x) {
     return (Vec2){ x.x / (1.0f + fabsf(x.x)),
                    x.y / (1.0f + fabsf(x.y)) };
 }
 
-static Vec2 vec2_hardClip(Vec2 x, float minVal, float maxVal) {
+Vec2 vec2_hardClip(Vec2 x, float minVal, float maxVal) {
     return (Vec2){ fminf(fmaxf(x.x, minVal), maxVal),
                    fminf(fmaxf(x.y, minVal), maxVal) };
 }
 
-static Vec2 vec2_bitCrush(Vec2 x, float bitDepth) {
+Vec2 vec2_bitCrush(Vec2 x, float bitDepth) {
     return (Vec2){ floorf(x.x * bitDepth) / bitDepth,
                    floorf(x.y * bitDepth) / bitDepth };
 }
 
-static Vec2 panSweep(float mono, float time) {
+Vec2 panSweep(float mono, float time) {
     float pan = sinf(TWO_PI * 0.1f * time); // -1 to 1
     float angle = (pan * 0.5f + 0.5f) * 0.5f * (float)M_PI;
     float leftGain = cosf(angle);
