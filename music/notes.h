@@ -5,24 +5,39 @@
 #ifndef NOTES_H
 #define NOTES_H
 
-static const float NOTE_C1_FREQ  = 32.70320f;
-static const float NOTE_Cs1_FREQ = 34.64783f;
-static const float NOTE_Db1_FREQ = 34.64783f;
-static const float NOTE_D1_FREQ  = 36.70810f;
-static const float NOTE_Ds1_FREQ = 38.89087f;
-static const float NOTE_Eb1_FREQ = 38.89087f;
-static const float NOTE_E1_FREQ  = 41.20344f;
-static const float NOTE_F1_FREQ  = 43.65353f;
-static const float NOTE_Fs1_FREQ = 46.24930f;
-static const float NOTE_Gb1_FREQ = 46.24930f;
-static const float NOTE_G1_FREQ  = 48.99943f;
-static const float NOTE_Gs1_FREQ = 51.91309f;
-static const float NOTE_Ab1_FREQ = 51.91309f;
-static const float NOTE_A1_FREQ  = 55.00000f;
-static const float NOTE_As1_FREQ = 58.27047f;
-static const float NOTE_Bb1_FREQ = 58.27047f;
-static const float NOTE_B1_FREQ  = 61.73541f;
+static const float C0_FREQ = 16.35160f; // Frequency of C0
 
+typedef enum {
+    SEMITONE_C = 0,
+    SEMITONE_CS = 1, // C#
+    SEMITONE_DB = 1, // Db (enharmonic with C#)
+    SEMITONE_D = 2,
+    SEMITONE_DS = 3, // D#
+    SEMITONE_EB = 3, // Eb
+    SEMITONE_E = 4,
+    SEMITONE_F = 5,
+    SEMITONE_FS = 6, // F#
+    SEMITONE_GB = 6, // Gb
+    SEMITONE_G = 7,
+    SEMITONE_GS = 8, // G#
+    SEMITONE_AB = 8, // Ab
+    SEMITONE_A = 9,
+    SEMITONE_AS = 10, // A#
+    SEMITONE_BB = 10, // Bb
+    SEMITONE_B = 11
+} SemitoneOffsetInOctave;
+
+static float getNoteFrequency(SemitoneOffsetInOctave semitone_offset, int8_t octave)
+{
+    // C0 is our reference. Each semitone is 1/12th of an octave.
+    // Each octave doubles the frequency (or halves if going down).
+    // The total number of semitones from C0 is:
+    // (octave * 12) + semitone_offset
+    int total_semitones_from_c0 = (octave * 12) + semitone_offset;
+
+    // Formula: f = C0_FREQ * 2 ^ (total_semitones_from_c0 / 12.0f)
+    return C0_FREQ * powf(2.0f, (float)total_semitones_from_c0 / 12.0f);
+}
 typedef enum {
     _32_NOTE,
     _16_NOTE,

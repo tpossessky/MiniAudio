@@ -20,7 +20,7 @@ void data_callback(const ma_device* device, void* output, const void* input, ma_
     float* out = output;
     UserData* data = device->pUserData;
 
-    float freq = NOTE_A1_FREQ * 2.0f;
+    float freq = NOTE_A1_FREQ * 5.0f;
     float phase_increment = freq / (float)device->sampleRate; // Increment for 0.0 to 1.0 phase
     float mix_gain = 0.5f; // For two waves, 0.5 is a safe starting point
 
@@ -30,17 +30,17 @@ void data_callback(const ma_device* device, void* output, const void* input, ma_
         output = (Vec2){0.0f, 0.0f};
 
         Vec2 sine_wave = vec2_mul(generateWave(WAVE_SINE, data->phase, 0.0f), 1.8f); // 70% volume
-        Vec2 triangle_wave = vec2_mul(generateWave(WAVE_SAW, data->phase, 0.25f), 0.3f); // 30% volume
+//        Vec2 triangle_wave = vec2_mul(generateWave(WAVE_SAW, data->phase, 0.25f), 0.3f); // 30% volume
         // No need for a global mix_gain if individual gains sum up to <= 1.0
-        Vec2 combined_wave = vec2_add(sine_wave, triangle_wave);
+//        Vec2 combined_wave = vec2_add(sine_wave, triangle_wave);
 
 
-        combined_wave = vec2_mul(combined_wave, mix_gain); // Using your scalar vec2_mul
+//        combined_wave = vec2_mul(combined_wave, mix_gain); // Using your scalar vec2_mul
 
 
 
 
-        output = combined_wave;
+        output = sine_wave;
 
 
 
