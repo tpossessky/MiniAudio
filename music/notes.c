@@ -1,7 +1,6 @@
 //
 // Created by Tristan Possessky on 7/8/25.
 //
-#include <i386/types.h>
 #include <math.h>
 #include "notes.h"
 

@@ -9,21 +9,21 @@ static const float C0_FREQ = 16.35160f; // Frequency of C0
 
 enum SemitoneOffsetInOctave{
     SEMITONE_C = 0,
-    SEMITONE_CS = 1, // C#
-    SEMITONE_DB = 1, // Db (enharmonic with C#)
+    SEMITONE_Cs = 1, // C#
+    SEMITONE_Db = 1, // Db (enharmonic with C#)
     SEMITONE_D = 2,
-    SEMITONE_DS = 3, // D#
-    SEMITONE_EB = 3, // Eb
+    SEMITONE_Ds = 3, // D#
+    SEMITONE_Eb = 3, // Eb
     SEMITONE_E = 4,
     SEMITONE_F = 5,
-    SEMITONE_FS = 6, // F#
-    SEMITONE_GB = 6, // Gb
+    SEMITONE_Fs = 6, // F#
+    SEMITONE_Gb = 6, // Gb
     SEMITONE_G = 7,
-    SEMITONE_GS = 8, // G#
-    SEMITONE_AB = 8, // Ab
+    SEMITONE_Gs = 8, // G#
+    SEMITONE_Ab = 8, // Ab
     SEMITONE_A = 9,
-    SEMITONE_AS = 10, // A#
-    SEMITONE_BB = 10, // Bb
+    SEMITONE_As = 10, // A#
+    SEMITONE_Bb = 10, // Bb
     SEMITONE_B = 11
 };
 

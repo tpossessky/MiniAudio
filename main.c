@@ -4,158 +4,94 @@
 #define DEVICE_FORMAT       ma_format_f32
 #define DEVICE_CHANNELS     2
 #define DEVICE_SAMPLE_RATE  44100
-#define VOLUME_MODIFIER 0.5f
+#define VOLUME_MODIFIER     0.5f
 
+#include <stdbool.h>
 #include <stdio.h>
 #include "./libs/miniaudio.h"
-#include "music/notes.c"
+#include "music/notes.h"
 #include "dsp/dsp.h"
+#include "synth/synth.h"
 #include "main.h"
+#include "synth/synth.h"
 
 
 //this is called every time the audio buffer wants data and specifies how much with frameCount
 void data_callback(const ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
-    float* out = (float*)output; // Explicit cast for clarity
-    OscillatorBank* oscillatorBank = (OscillatorBank*)device->pUserData; // Explicit cast for clarity
 
-    // Basic error checking
-    if (oscillatorBank == NULL || oscillatorBank->oscillators == NULL || oscillatorBank->numOscillators == 0) {
-        // Output silence if no valid data
-        for (ma_uint32 i = 0; i < frameCount * DEVICE_CHANNELS; ++i) {
-            out[i] = 0.0f;
-        }
-        (void)input;
-        return;
-    }
+    float* out = output;
 
-    // You no longer need the unused `freq` and `phase_incrementONE` variables here.
-    for (ma_uint32 i = 0; i < frameCount; i++) {
-        Vec2 combined_wave_for_this_frame = {0.0f, 0.0f}; // Initialize for summing for the current sample frame
+    SynthState* synthState = device->pUserData;
+    Voice* synthVoices = synthState->voices;
 
-        // Loop through all oscillators to sum their outputs
-        for (int osc_idx = 0; osc_idx < oscillatorBank->numOscillators; osc_idx++) {
-            Oscillator* current_osc = &oscillatorBank->oscillators[osc_idx];
+    for (ma_uint32 frame_idx = 0; frame_idx < frameCount; frame_idx++) {
+        Vec2 finalOutputPerFrame = {0.0f, 0.0f}; // Initialize for summing for the current sample frame
 
-            // Calculate phase increment for THIS oscillator
-            float phase_increment = current_osc->frequency / (float)device->sampleRate;
+        for(ma_uint8 voice_idx = 0; voice_idx < synthState->numVoices; voice_idx++) {
 
-            // Generate wave for this oscillator at its current phase
-            Vec2 osc_output = generateWave(current_osc->waveType, current_osc->phase, current_osc->detune);
-            osc_output = vec2_mul(osc_output, current_osc->gain); // Apply individual oscillator gain
+            Voice* curVoice = &synthVoices[voice_idx];
+            if (!curVoice->isActive) continue;
 
-            // Add this oscillator's output to the combined sum
-            combined_wave_for_this_frame = vec2_add(combined_wave_for_this_frame, osc_output);
+            for (ma_uint8 osc_idx = 0; osc_idx < curVoice->numOscillators; osc_idx++) {
 
-            // *** IMPORTANT: Update and wrap the phase for THIS oscillator ***
-            current_osc->phase += phase_increment;
-            if (current_osc->phase >= 1.0f) {
-                current_osc->phase -= 1.0f;
+                Oscillator* curOsc = &curVoice->oscillators[osc_idx];
+                float phaseIncrement = curOsc->frequency / (float)device->sampleRate;
+
+                Vec2 curOscOutput = generate_wave(curOsc->waveType, curOsc->phase, curOsc->detune);
+                curOscOutput = vec2_mul(curOscOutput, curOsc->gain); // Apply individual oscillator gain
+
+                // Add this oscillator's output to the combined sum
+                finalOutputPerFrame = vec2_add(finalOutputPerFrame, curOscOutput);
+
+                curOsc->phase += phaseIncrement;
+                if (curOsc->phase >= 1.0f) {
+                    curOsc->phase -= 1.0f;
+                }
             }
         }
-
-        // Apply master gain based on the number of oscillators to prevent clipping
-        // and then apply the overall VOLUME_MODIFIER.
-        if (oscillatorBank->numOscillators > 0) {
-            // This normalizes the sum if all individual gains were 1.0f.
-            // Since you set individual gains to `1.0f / numOscillators`, this effectively doubles it back.
-            // You might want to remove the `1.0f / (float)oscillatorBank->numOscillators` here
-            // if your individual gains already manage clipping, or adjust it carefully.
-            // Let's remove it for now, as your `main` already sets appropriate individual gains.
-            // combined_wave_for_this_frame = vec2_mul(combined_wave_for_this_frame, 1.0f / (float)oscillatorBank->numOscillators);
-        }
-        // Apply your master volume modifier last
-        combined_wave_for_this_frame = vec2_mul(combined_wave_for_this_frame, VOLUME_MODIFIER);
+        finalOutputPerFrame = vec2_mul(finalOutputPerFrame, VOLUME_MODIFIER);
 
         // Output to sound device (stereo)
-        out[i * 2]     = combined_wave_for_this_frame.x;
-        out[i * 2 + 1] = combined_wave_for_this_frame.y;
+        out[frame_idx * 2]     = finalOutputPerFrame.x;
+        out[frame_idx * 2 + 1] = finalOutputPerFrame.y;
     }
 
-    (void)input; // Cast to void to suppress unused parameter warning
+    (void)input;
 }
 
 int main() {
+    SynthState* synth_state = sy_init_synth(16);
+
+    if (synth_state == NULL) {
+        printf("Error initializing synth from main.\n");
+        return -1;
+    }
+
+    //config mini audio
     ma_device_config config = ma_device_config_init(ma_device_type_playback);
-    config.playback.format = ma_format_f32;
+    config.playback.format = ma_format_f32; //one sample is a 32-bit float
     config.playback.channels = DEVICE_CHANNELS;
     config.sampleRate = DEVICE_SAMPLE_RATE;
     config.dataCallback = (ma_device_data_proc) data_callback;
-
-
-    OscillatorBank oscillatorBanks = { NULL, 0 }; // Initialize its members.
-
-    oscillatorBanks.numOscillators = 6;
-    oscillatorBanks.oscillators = (Oscillator*) malloc(sizeof(Oscillator) * oscillatorBanks.numOscillators);
-
-
-    //assumes all waves should be equal
-    float gain = 1.0f/(float) oscillatorBanks.numOscillators;
-
-    oscillatorBanks.oscillators[0] = (Oscillator){
-            .phase = 0.0f,
-            .frequency = getNoteFrequency(SEMITONE_A,4),
-            .waveType = WAVE_SINE,
-            .gain = gain,
-            .detune = 0.0f
-    };
-    oscillatorBanks.oscillators[1] = (Oscillator){
-            .phase = 0.0f,
-            .frequency = getNoteFrequency(SEMITONE_CS,4),
-            .waveType = WAVE_SINE,
-            .gain = gain,
-            .detune = 0.0f
-    };
-    oscillatorBanks.oscillators[2] = (Oscillator){
-            .phase = 0.0f,
-            .frequency = getNoteFrequency(SEMITONE_E,4),
-            .waveType = WAVE_SINE,
-            .gain = gain,
-            .detune = 0.0f
-    };
-    oscillatorBanks.oscillators[3] = (Oscillator){
-            .phase = 0.0f,
-            .frequency = getNoteFrequency(SEMITONE_E,3),
-            .waveType = WAVE_SINE,
-            .gain = gain,
-            .detune = 0.0f
-    };
-    oscillatorBanks.oscillators[4] = (Oscillator){
-            .phase = 0.0f,
-            .frequency = getNoteFrequency(SEMITONE_CS,3),
-            .waveType = WAVE_SINE,
-            .gain = gain,
-            .detune = 0.0f
-    };
-    oscillatorBanks.oscillators[5] = (Oscillator){
-            .phase = 0.0f,
-            .frequency = getNoteFrequency(SEMITONE_A,2),
-            .waveType = WAVE_SINE,
-            .gain = gain,
-            .detune = 0.0f
-    };
-
-
-
-
-    config.pUserData = &oscillatorBanks;
-
+    config.pUserData = synth_state;
+    config.noClip = true;
+    
     ma_device device;
 
     if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
         printf("failed to init device\n");
-        free(oscillatorBanks.oscillators); // IMPORTANT: Free the dynamically allocated memory
         return -1;
     }
 
     if (ma_device_start(&device) != MA_SUCCESS) {
         printf("failed to start device\n");
-        free(oscillatorBanks.oscillators); // IMPORTANT: Free the dynamically allocated memory
         return -2;
     }
 
     printf("playing... press enter to stop\n");
+    
     getchar();
     ma_device_uninit(&device);
-    free(oscillatorBanks.oscillators); // IMPORTANT: Free the dynamically allocated memory
+    free(synth_state);
     return 0;
 }
