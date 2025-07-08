@@ -7,7 +7,7 @@
 
 static const float C0_FREQ = 16.35160f; // Frequency of C0
 
-typedef enum {
+enum SemitoneOffsetInOctave{
     SEMITONE_C = 0,
     SEMITONE_CS = 1, // C#
     SEMITONE_DB = 1, // Db (enharmonic with C#)
@@ -25,26 +25,22 @@ typedef enum {
     SEMITONE_AS = 10, // A#
     SEMITONE_BB = 10, // Bb
     SEMITONE_B = 11
-} SemitoneOffsetInOctave;
+};
 
-static float getNoteFrequency(SemitoneOffsetInOctave semitone_offset, int8_t octave)
-{
-    // C0 is our reference. Each semitone is 1/12th of an octave.
-    // Each octave doubles the frequency (or halves if going down).
-    // The total number of semitones from C0 is:
-    // (octave * 12) + semitone_offset
-    int total_semitones_from_c0 = (octave * 12) + semitone_offset;
-
-    // Formula: f = C0_FREQ * 2 ^ (total_semitones_from_c0 / 12.0f)
-    return C0_FREQ * powf(2.0f, (float)total_semitones_from_c0 / 12.0f);
-}
-typedef enum {
+enum NoteLength {
     _32_NOTE,
     _16_NOTE,
     _8_NOTE,
     _4_NOTE,
     _2_NOTE,
     _1_NOTE,
-} NoteLength;
+};
+
+struct Note {
+    float freq;
+    enum NoteLength duration;
+};
+
+float getNoteFrequency(enum SemitoneOffsetInOctave semitone_offset, int octave);
 
 #endif //NOTES_H
