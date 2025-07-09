@@ -23,7 +23,7 @@ typedef struct {
  */
 typedef struct {
     Oscillator* oscillators;    // Pointer to an array of oscillators
-    ma_uint8 numOscillators;    // Number of active oscillators, defaulted to 3
+    ma_uint8 numOscillators;    // Number of active oscillators, determined by oscillatorsPerVoice
     bool isActive;
 } Voice;
 

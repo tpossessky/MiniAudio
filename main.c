@@ -59,8 +59,21 @@ void data_callback(const ma_device* device, void* output, const void* input, ma_
     (void)input;
 }
 
+void setConfig(ma_device_config* config, SynthState* synth_state){
+    config->playback.format = ma_format_f32;
+    config->playback.format = ma_format_f32; //one sample is a 32-bit float
+    config->playback.channels = DEVICE_CHANNELS;
+    config->sampleRate = DEVICE_SAMPLE_RATE;
+    config->dataCallback = (ma_device_data_proc) data_callback;
+    config->pUserData = synth_state;
+    config->noClip = true;
+}
+
+
 int main() {
-    SynthState* synth_state = sy_init_synth(16);
+    SynthState* synth_state = sy_init_synth(25);
+    ma_device_config config = ma_device_config_init(ma_device_type_playback);
+    ma_device device;
 
     if (synth_state == NULL) {
         printf("Error initializing synth from main.\n");
@@ -68,24 +81,17 @@ int main() {
     }
 
     //config mini audio
-    ma_device_config config = ma_device_config_init(ma_device_type_playback);
-    config.playback.format = ma_format_f32; //one sample is a 32-bit float
-    config.playback.channels = DEVICE_CHANNELS;
-    config.sampleRate = DEVICE_SAMPLE_RATE;
-    config.dataCallback = (ma_device_data_proc) data_callback;
-    config.pUserData = synth_state;
-    config.noClip = true;
+    setConfig(&config, synth_state);
     
-    ma_device device;
 
     if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
         printf("failed to init device\n");
-        return -1;
+        return -2;
     }
 
     if (ma_device_start(&device) != MA_SUCCESS) {
         printf("failed to start device\n");
-        return -2;
+        return -3;
     }
 
     printf("playing... press enter to stop\n");
